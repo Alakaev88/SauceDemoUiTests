@@ -19,7 +19,7 @@ public class LoginTest {
 
     @Test
     void successfulLoginTest() {
-
+        // Проверка успешной авторизации
     loginPage.login("standard_user","secret_sauce");
 
         String actualText = productsPage.getPageTitle();
