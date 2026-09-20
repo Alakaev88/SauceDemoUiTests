@@ -27,6 +27,13 @@
             <artifactId>selenium-java</artifactId>
             <version>4.26.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.codeborne</groupId>
+            <artifactId>selenide</artifactId>
+            <version>7.18.1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>
