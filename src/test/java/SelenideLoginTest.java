@@ -7,6 +7,10 @@ import static com.codeborne.selenide.Selenide.open;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import io.qameta.allure.Allure;
+import io.qameta.allure.Description;
+import io.qameta.allure.Severity;
+import io.qameta.allure.SeverityLevel;
+import io.qameta.allure.Owner;
 
 public class SelenideLoginTest {
     static {
@@ -19,6 +23,9 @@ public class SelenideLoginTest {
     void setUP(){
         open("https://www.saucedemo.com/");
     }
+    @Owner("Will")
+    @Severity(SeverityLevel.CRITICAL)
+    @Description("Проверка успешной авторизации пользователя с корректными учетными данными")
     @Test
     void successfulLoginTest() {
 
@@ -27,12 +34,17 @@ public class SelenideLoginTest {
             productsPage.getPageTitle().shouldHave(text("Products"));
         });
     }
+    @Owner("Will")
+    @Severity(SeverityLevel.CRITICAL)
+    @Description("Проверка авторизации с неверными учетными данными")
     @ParameterizedTest
     @CsvSource({
             "standard_user, wrong_password",
             "wrong_user, secret_sauce"
     })
     void invalidCredentialsTest(String username, String password){
+        Allure.parameter("Username", username);
+        Allure.parameter("Password", password);
 
         loginPage.login(username,password);
         loginPage.getErrorMessage().shouldHave(text
