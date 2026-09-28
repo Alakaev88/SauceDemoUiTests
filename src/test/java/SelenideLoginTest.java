@@ -11,6 +11,9 @@ import io.qameta.allure.Description;
 import io.qameta.allure.Severity;
 import io.qameta.allure.SeverityLevel;
 import io.qameta.allure.Owner;
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Story;
 
 public class SelenideLoginTest {
     static {
@@ -23,6 +26,9 @@ public class SelenideLoginTest {
     void setUP(){
         open("https://www.saucedemo.com/");
     }
+    @Epic("Авторизация")
+    @Feature("Вход в систему")
+    @Story("Авторизация с верными учетными данными")
     @Owner("Will")
     @Severity(SeverityLevel.CRITICAL)
     @Description("Проверка успешной авторизации пользователя с корректными учетными данными")
