@@ -6,6 +6,15 @@ import java.util.UUID; // Подключаем класс UUID для генер
 
 public class RestAssuredTest {
     private static final String TOKEN = System.getenv("GOREST_TOKEN"); // Получаем Bearer Token из переменной окружения
+    private static final String GOREST_URL = "https://gorest.co.in/public/v2/users";
+    private static final String REQUEST_BODY = """
+        {
+            "name": "Alex Negative Test",
+            "email": "alex.negative@example.com",
+            "gender": "male",
+            "status": "active"
+        }
+        """;  // Сохраняем JSON-тело запроса для негативных тестов
 
     @Test
     void getUserTest(){
@@ -178,5 +187,32 @@ public class RestAssuredTest {
                 .body("name", equalTo("Alex Java")) // Проверяем имя созданного пользователя
                 .body("email", equalTo(email)) // Проверяем email созданного пользователя
                 .body("id", notNullValue()); // Проверяем, что сервер выдал пользователю id
+    }
+
+    @Test // Помечаем метод как тест JUnit 5
+    void createUserWithoutTokenTest() { // Проверяем создание пользователя без токена
+
+        given() // Начинаем формировать HTTP-запрос
+                .contentType("application/json") // Указываем, что отправляем JSON
+                .body(REQUEST_BODY) // Передаем JSON-тело запроса
+                .when() // Переходим к отправке запроса
+                .post(GOREST_URL) // Отправляем POST-запрос на создание пользователя
+                .then() // Переходим к проверке ответа
+                .statusCode(401) // Проверяем, что сервер требует авторизацию
+                .body("message", equalTo("Authentication failed")); // Проверяем сообщение об отсутствии авторизации
+    }
+
+    @Test // Помечаем метод как тест JUnit 5
+    void createUserWithInvalidTokenTest() { // Проверяем создание пользователя с неправильным токеном
+
+        given() // Начинаем формировать HTTP-запрос
+                .header("Authorization", "Bearer this-is-wrong-token") // Передаем заведомо неправильный Bearer Token
+                .contentType("application/json") // Указываем, что отправляем JSON
+                .body(REQUEST_BODY) // Передаем JSON-тело запроса
+                .when() // Переходим к отправке запроса
+                .post(GOREST_URL) // Отправляем POST-запрос на создание пользователя
+                .then() // Переходим к проверке ответа
+                .statusCode(401) // Проверяем, что неправильный токен не дает доступ
+                .body("message", equalTo("Invalid token")); // Проверяем сообщение сервера о неправильном токене
     }
 }
