@@ -338,4 +338,46 @@ public class RestAssuredTest {
         assertEquals(newEmail, getResponse.jsonPath().getString("email")); // Проверяем, что новый email сохранился
     }
 
+    @Test // Помечаем метод как тест JUnit 5
+    void createDeleteAndCheckUserTest() { // Создаем пользователя, удаляем его и проверяем, что он больше не найден
+
+        String email = "alex.delete." + UUID.randomUUID() + "@example.com"; // Создаем уникальный email
+
+        String requestBody = """
+            {
+                "name": "Alex Delete",
+                "email": "%s",
+                "gender": "male",
+                "status": "active"
+            }
+            """.formatted(email); // Формируем JSON-тело для создания пользователя
+
+        Response createResponse = given() // Начинаем формировать POST-запрос
+                .header("Authorization", "Bearer " + TOKEN) // Передаем Bearer Token
+                .contentType("application/json") // Указываем, что отправляем JSON
+                .body(requestBody) // Передаем тело запроса
+                .when() // Переходим к отправке запроса
+                .post(GOREST_URL); // Создаем пользователя
+
+        assertEquals(201, createResponse.getStatusCode()); // Проверяем успешное создание пользователя
+
+        int userId = createResponse.jsonPath().getInt("id"); // Получаем id созданного пользователя
+
+        Response deleteResponse = given() // Начинаем формировать DELETE-запрос
+                .header("Authorization", "Bearer " + TOKEN) // Передаем Bearer Token
+                .pathParam("id", userId) // Передаем id пользователя
+                .when() // Переходим к отправке запроса
+                .delete(GOREST_URL + "/{id}"); // Удаляем пользователя
+
+        assertEquals(204, deleteResponse.getStatusCode()); // Проверяем успешное удаление пользователя
+
+        Response getResponse = given() // Начинаем формировать GET-запрос после удаления
+                .header("Authorization", "Bearer " + TOKEN) // Передаем Bearer Token
+                .pathParam("id", userId) // Передаем id удаленного пользователя
+                .when() // Переходим к отправке запроса
+                .get(GOREST_URL + "/{id}"); // Пытаемся получить удаленного пользователя
+
+        assertEquals(404, getResponse.getStatusCode()); // Проверяем, что удаленный пользователь больше не найден
+    }
+
 }
