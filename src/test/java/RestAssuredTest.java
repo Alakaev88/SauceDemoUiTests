@@ -283,4 +283,59 @@ public class RestAssuredTest {
         assertEquals(email, getResponse.jsonPath().getString("email")); // Проверяем email пользователя
     }
 
+    @Test // Помечаем метод как тест JUnit 5
+    void createUpdateAndGetUserTest() { // Создаем пользователя, обновляем его и затем проверяем изменения
+
+        String email = "alex.update." + UUID.randomUUID() + "@example.com"; // Создаем уникальный email для нового пользователя
+
+        String requestBody = """
+            {
+                "name": "Alex Update",
+                "email": "%s",
+                "gender": "male",
+                "status": "active"
+            }
+            """.formatted(email); // Формируем JSON-тело для создания пользователя
+
+        Response createResponse = given() // Начинаем формировать POST-запрос
+                .header("Authorization", "Bearer " + TOKEN) // Передаем Bearer Token
+                .contentType("application/json") // Указываем, что отправляем JSON
+                .body(requestBody) // Передаем тело запроса
+                .when() // Переходим к отправке запроса
+                .post(GOREST_URL); // Создаем пользователя
+
+        assertEquals(201, createResponse.getStatusCode()); // Проверяем успешное создание пользователя
+
+        int userId = createResponse.jsonPath().getInt("id"); // Получаем id созданного пользователя
+
+        String newEmail = "alex.changed." + UUID.randomUUID() + "@example.com"; // Создаем новый уникальный email
+
+        String patchBody = """
+            {
+                "email": "%s"
+            }
+            """.formatted(newEmail); // Формируем JSON только с изменяемым полем email
+
+        Response patchResponse = given() // Начинаем формировать PATCH-запрос
+                .header("Authorization", "Bearer " + TOKEN) // Передаем Bearer Token
+                .contentType("application/json") // Указываем JSON
+                .pathParam("id", userId) // Передаем id пользователя
+                .body(patchBody) // Передаем JSON с новым email
+                .when() // Переходим к отправке запроса
+                .patch(GOREST_URL + "/{id}"); // Частично обновляем пользователя
+
+        assertEquals(200, patchResponse.getStatusCode()); // Проверяем успешное обновление
+        assertEquals(newEmail, patchResponse.jsonPath().getString("email")); // Проверяем email в ответе PATCH
+
+        Response getResponse = given() // Начинаем формировать GET-запрос
+                .header("Authorization", "Bearer " + TOKEN) // Передаем Bearer Token
+                .pathParam("id", userId) // Передаем тот же id
+                .when() // Переходим к отправке запроса
+                .get(GOREST_URL + "/{id}"); // Получаем пользователя после обновления
+
+        assertEquals(200, getResponse.getStatusCode()); // Проверяем успешный GET
+        assertEquals(userId, getResponse.jsonPath().getInt("id")); // Проверяем id пользователя
+        assertEquals(newEmail, getResponse.jsonPath().getString("email")); // Проверяем, что новый email сохранился
+    }
+
 }
