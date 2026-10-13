@@ -3,6 +3,9 @@ import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue; // Импортируем проверку значения, которое не должно быть null
 import java.util.UUID; // Подключаем класс UUID для генерации уникальных идентификаторов
+import io.restassured.response.Response; // Подключаем класс, который представляет HTTP-ответ
+import static org.junit.jupiter.api.Assertions.assertEquals; // Подключаем JUnit-проверку равенства
+import static org.junit.jupiter.api.Assertions.assertTrue; // Подключаем проверку условия true
 
 public class RestAssuredTest {
     private static final String TOKEN = System.getenv("GOREST_TOKEN"); // Получаем Bearer Token из переменной окружения
@@ -215,4 +218,69 @@ public class RestAssuredTest {
                 .statusCode(401) // Проверяем, что неправильный токен не дает доступ
                 .body("message", equalTo("Invalid token")); // Проверяем сообщение сервера о неправильном токене
     }
+
+    @Test // Помечаем метод как тест JUnit 5
+    void getUserResponseTest() { // Создаем тест для работы с объектом HTTP-ответа
+
+        Response response = given() // Создаем переменную для хранения ответа сервера
+                .when() // Переходим к отправке запроса
+                .get("https://jsonplaceholder.typicode.com/users/1"); // Выполняем GET-запрос
+
+        int statusCode = response.getStatusCode(); // Получаем HTTP-статус из ответа
+        String contentType = response.getContentType(); // Получаем Content-Type из заголовков ответа
+        String city = response.jsonPath().getString("address.city"); // Достаем city из JSON-ответа
+
+        System.out.println(statusCode); // Выводим HTTP-статус в консоль
+        System.out.println(contentType); // Выводим тип содержимого в консоль
+        System.out.println(city); // Выводим город пользователя в консоль
+
+        assertEquals(200, statusCode); // Проверяем, что сервер вернул HTTP 200
+        assertEquals("Gwenborough", city); // Проверяем, что city соответствует ожидаемому значению
+        assertTrue(contentType.contains("application/json")); // Проверяем, что сервер вернул JSON
+    }
+    @Test // Помечаем метод как тест JUnit 5
+    void createAndGetUserTest() { // Создаем пользователя и затем получаем его по id
+        System.out.println("TOKEN null: " + (TOKEN == null)); // Проверяем, есть ли токен вообще
+
+        System.out.println(
+                "TOKEN length: " + (TOKEN == null ? 0 : TOKEN.length())
+        ); // Показываем длину токена, не раскрывая сам токен
+        String email = "alex.chain." + UUID.randomUUID() + "@example.com"; // Создаем уникальный email
+
+        String requestBody = """
+            {
+                "name": "Alex Chain",
+                "email": "%s",
+                "gender": "male",
+                "status": "active"
+            }
+            """.formatted(email); // Формируем JSON-тело с уникальным email
+
+        Response createResponse = given() // Начинаем формировать POST-запрос
+                .header("Authorization", "Bearer " + TOKEN) // Передаем Bearer Token
+                .contentType("application/json") // Указываем, что отправляем JSON
+                .body(requestBody) // Передаем JSON-тело запроса
+                .when() // Переходим к отправке запроса
+                .post(GOREST_URL); // Создаем нового пользователя
+
+
+        System.out.println(createResponse.getStatusCode()); // Выводим статус POST-запроса
+        System.out.println(createResponse.getBody().asString()); // Выводим тело ответа сервера
+
+        assertEquals(201, createResponse.getStatusCode()); // Сначала проверяем, что POST действительно создал пользователя
+
+        int userId = createResponse.jsonPath().getInt("id"); // Только после успешного POST получаем id
+
+        Response getResponse = given() // Начинаем формировать GET-запрос
+                .header("Authorization", "Bearer " + TOKEN) // Передаем тот же Bearer Token
+                .pathParam("id", userId) // Передаем id созданного пользователя
+                .when() // Переходим к отправке запроса
+                .get(GOREST_URL + "/{id}"); // Получаем пользователя по его id
+
+        assertEquals(200, getResponse.getStatusCode()); // Проверяем успешный GET-запрос
+        assertEquals(userId, getResponse.jsonPath().getInt("id")); // Проверяем, что id совпадает
+        assertEquals("Alex Chain", getResponse.jsonPath().getString("name")); // Проверяем имя пользователя
+        assertEquals(email, getResponse.jsonPath().getString("email")); // Проверяем email пользователя
+    }
+
 }
