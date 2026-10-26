@@ -6,11 +6,15 @@ import java.util.UUID; // Подключаем класс UUID для генер
 import io.restassured.response.Response; // Подключаем класс, который представляет HTTP-ответ
 import static org.junit.jupiter.api.Assertions.assertEquals; // Подключаем JUnit-проверку равенства
 import static org.junit.jupiter.api.Assertions.assertTrue; // Подключаем проверку условия true
+import io.restassured.specification.RequestSpecification; // Тип объекта, в котором хранятся общие настройки запросов
+import org.junit.jupiter.api.BeforeEach; // Аннотация для метода, выполняемого перед каждым тестом
 
 public class RestAssuredTest {
+    private RequestSpecification goRestRequest; // Здесь будет храниться общая заготовка для запросов GoREST
     private static final String TOKEN = System.getenv("GOREST_TOKEN"); // Получаем Bearer Token из переменной окружения
     private static final String GOREST_URL = "https://gorest.co.in/public/v2/users";
     private static final String REQUEST_BODY = """
+        
         {
             "name": "Alex Negative Test",
             "email": "alex.negative@example.com",
@@ -18,6 +22,16 @@ public class RestAssuredTest {
             "status": "active"
         }
         """;  // Сохраняем JSON-тело запроса для негативных тестов
+
+    @BeforeEach // Этот метод JUnit выполняет перед каждым тестом
+    void setUpApi() {
+
+        goRestRequest = given() // Создаём заготовку REST Assured
+                .baseUri("https://gorest.co.in") // Общая часть URL
+                .basePath("/public/v2") // Общий путь API
+                .header("Authorization", "Bearer " + TOKEN) // Добавляем Bearer Token
+                .contentType("application/json"); // По умолчанию отправляем JSON
+    }
 
     @Test
     void getUserTest(){
@@ -378,6 +392,17 @@ public class RestAssuredTest {
                 .get(GOREST_URL + "/{id}"); // Пытаемся получить удаленного пользователя
 
         assertEquals(404, getResponse.getStatusCode()); // Проверяем, что удаленный пользователь больше не найден
+    }
+
+    @Test // JUnit-тест
+    void getUsersWithRequestSpecificationTest() {
+
+        Response response = given() // Начинаем запрос
+                .spec(goRestRequest) // Берём общие настройки GoREST
+                .when() // Переходим к отправке
+                .get("/users"); // GET https://gorest.co.in/public/v2/users
+
+        assertEquals(200, response.getStatusCode()); // Проверяем успешный ответ
     }
 
 }
